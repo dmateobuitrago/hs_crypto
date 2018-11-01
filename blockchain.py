@@ -1,4 +1,15 @@
 # Variables
+import hashlib as hl
+import json
+
+# string = 'sataeta'
+# hashed = hl.sha256(string.encode())
+
+
+# dictionary = {'key1':1,'key2':2}
+
+# json_dumped = json.dumps(dictionary, sort_keys=True)
+# print(json_dumped)
 
 blockchain = []
 username = ""
@@ -8,6 +19,7 @@ def getusername():
  username = input('Hi, what is your name? ')
 
 def getuserinput(showinstructions=False):
+ checkblockchainhealth() 
  if showinstructions:
   print('')
   print('/++++++++++/')
@@ -43,7 +55,6 @@ def inputHandler(userinput):
  elif userinput == 'c':
   print('')
   print('checking blockchain..')
-  checkblockchainhealth()
   getuserinput() 
  elif userinput == 'h':
   getuserinput(True) 
@@ -84,8 +95,6 @@ def checkblockchainhealth():
   for index, value in enumerate(blockchain[1:], 1):
     if(blockchain[index-1] != value[0]):
       ishealthy = False
-    else:
-      print('',index, value, '')
   
   if ishealthy:
     print('The blockchain is fine!')
@@ -93,7 +102,7 @@ def checkblockchainhealth():
     print('The blockchain was hacked!')
 
 def manipulateblockchain():
-  blocktochange = input('Which block do you want to hack? Type a number from 1 to ' + str(len(blockchain)) + ' -> ')
+  blocktochange = input('Which block do you want to hack? Type a number from 1 to ' + str(len(blockchain) - 1) + ' -> ')
 
   blocktochange = int(blocktochange)
 
