@@ -11,12 +11,13 @@ import json
 # json_dumped = json.dumps(dictionary, sort_keys=True)
 # print(json_dumped)
 
-blockchain = []
-username = ""
+BLOCKCHAIN = []
+TRANSACTION_QUEUE = []
+USERNAME = ""
 
 def getusername():
- global username
- username = input('Hi, what is your name? ')
+ global USERNAME
+ USERNAME = input('Hi, what is your name? ')
 
 def getuserinput(showinstructions=False):
  checkblockchainhealth() 
@@ -40,17 +41,22 @@ def inputHandler(userinput):
  if userinput == 'a':
   print('')
   print('adding a transaction...')
-  createtransaction()
+  create_transaction()
   getuserinput() 
  elif userinput == 'p':
   print('')
   print('printing...')
   printblockchain()
   getuserinput() 
+ elif userinput == 'h':
+  print('')
+  print('hacking..')
+  manipulateblockchain()
+  getuserinput() 
  elif userinput == 'm':
   print('')
-  print('manipulating..')
-  manipulateblockchain()
+  print('mining..')
+  mine()
   getuserinput() 
  elif userinput == 'c':
   print('')
@@ -69,44 +75,93 @@ def inputHandler(userinput):
   getuserinput() 
 
 def creategensisblock():
- genblock = ['genesis', 'genesis', 'genesis']
- blockchain.append(genblock)
+ genblock = {
+   'previous_hash': '',
+   'index': 0,
+   'transactions': []
+ }
+ BLOCKCHAIN.append(genblock)
 
 def printblockchain():
-  for index, value in enumerate(blockchain):
-    print('',index, value, '')
+  print(BLOCKCHAIN)
 
-def createtransaction():
- transaction = [blockchain[-1],'','','']
- transaction_number = str(len(blockchain))
- print('')
- print('/------Transaction #' + transaction_number +'--------/')
- print('')
- transaction[1] = input("Who are you sending money? ")
- transaction[2] = input("How much are you sending to "+ transaction[1] +"? $")
- transaction[3] = username
- appendtransaction(transaction)
+def get_block_hash(index):
+  """[summary]
+  
+  Arguments:
+    index {[int]} -- [index from hashable block]
+  """
+  global BLOCKCHAIN
 
-def appendtransaction(transaction):
-  blockchain.append(transaction)
+  previous_block = BLOCKCHAIN[index]
+  previous_block_dump = json.dumps(previous_block, sort_keys=True)
+  previous_block_hashed = hl.sha256(previous_block_dump.encode()).hexdigest()
+
+  return previous_block_hashed
+
+  # get previous block
+  # hash previous block
+
+
+def create_transaction():
+ #  create transaction dictionary
+ recipient = input("Who are you sending money? ")
+ amount = input("How much are you sending? $")
+
+ transaction = {
+   'sender':USERNAME,
+   'recipient':recipient,
+   'amount':amount
+ }
+
+ TRANSACTION_QUEUE.append(transaction)
+
+
+def mine():
+  # add block to blockchain
+  global BLOCKCHAIN
+  global TRANSACTION_QUEUE
+
+  index = len(BLOCKCHAIN)
+
+  previous_hash = get_block_hash(index-1)
+
+  new_block = {
+    'previous_hash':previous_hash,
+    'index':index,
+    'transactions':TRANSACTION_QUEUE
+  }
+
+  TRANSACTION_QUEUE = []
+
+  BLOCKCHAIN.append(new_block)
+
+  # # reward miner
+
 
 def checkblockchainhealth():
-  ishealthy = True
-  for index, value in enumerate(blockchain[1:], 1):
-    if(blockchain[index-1] != value[0]):
-      ishealthy = False
+  is_healthy = True
+
+  # compare hash with previous block
+  for index, block in enumerate(BLOCKCHAIN):
+    print(block,index)
+    previous_hash_from_actual_block = get_block_hash(index-1)
+    previous_hash_from_current_block = block.previous_block
+
+    if(previous_hash_from_actual_block != previous_hash_from_current_block):
+      is_healthy = False
   
-  if ishealthy:
+  if is_healthy:
     print('The blockchain is fine!')
   else:
     print('The blockchain was hacked!')
 
 def manipulateblockchain():
-  blocktochange = input('Which block do you want to hack? Type a number from 1 to ' + str(len(blockchain) - 1) + ' -> ')
+  block_to_change = input('Which block do you want to hack? Type a number from 1 to ' + str(len(BLOCKCHAIN) - 1) + ' -> ')
 
-  blocktochange = int(blocktochange)
+  block_to_change = int(block_to_change)
 
-  blockchain[blocktochange - 1] = 'hacked block'
+  BLOCKCHAIN[block_to_change - 1] = 'hacked block'
 
 
 
