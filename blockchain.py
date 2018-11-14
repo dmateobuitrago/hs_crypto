@@ -1,6 +1,10 @@
 # Variables
 import hashlib as hl
 import json
+import logging
+
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 # string = 'sataeta'
 # hashed = hl.sha256(string.encode())
@@ -13,11 +17,14 @@ import json
 
 BLOCKCHAIN = []
 TRANSACTION_QUEUE = []
+TRANSACTION_QUEUE = []
 USERNAME = ""
+PARTICIPANTS = set()
 
 def getusername():
- global USERNAME
+ global USERNAME, PARTICIPANTS
  USERNAME = input('Hi, what is your name? ')
+ PARTICIPANTS.add(USERNAME)
 
 def getuserinput(showinstructions=False):
  checkblockchainhealth() 
@@ -26,6 +33,7 @@ def getuserinput(showinstructions=False):
   print('/++++++++++/')
   print('a: for adding a transaction')
   print('p: for printing the blockchain blocks')
+  print('b: for getting balance')
   print('m: for manipulating the chain')
   print('c: for checking the blockchain health')
   print('h: for help')
@@ -38,52 +46,69 @@ def getuserinput(showinstructions=False):
  inputHandler(userinput)
 
 def inputHandler(userinput):
- if userinput == 'a':
-  print('')
-  print('adding a transaction...')
-  create_transaction()
-  getuserinput() 
- elif userinput == 'p':
-  print('')
-  print('printing...')
-  printblockchain()
-  getuserinput() 
- elif userinput == 'h':
-  print('')
-  print('hacking..')
-  manipulateblockchain()
-  getuserinput() 
- elif userinput == 'm':
-  print('')
-  print('mining..')
-  mine()
-  getuserinput() 
- elif userinput == 'c':
-  print('')
-  print('checking blockchain..')
-  getuserinput() 
- elif userinput == 'h':
-  getuserinput(True) 
- elif userinput == 'q':
-  print('')
-  print('quiting...')
-  exit()
- else:
-  print('/++++++++++/')
-  print('Invalid request')
-  print('/++++++++++/')
-  getuserinput() 
+  if userinput == 'a':
+    print('')
+    print('adding a transaction...')
+    create_transaction()
+    getuserinput() 
+  elif userinput == 'p':
+    print('')
+    print('printing...')
+    print_blockchain()
+    getuserinput() 
+  elif userinput == 'h':
+    print('')
+    print('hacking..')
+    manipulateblockchain()
+    getuserinput() 
+  elif userinput == 'b':
+    print('')
+    print('getting balance..')
+    print_balance(USERNAME)
+    getuserinput() 
+  elif userinput == 'm':
+    print('')
+    print('mining..')
+    mine()
+    getuserinput() 
+  elif userinput == 'c':
+    print('')
+    print('checking blockchain..')
+    getuserinput() 
+  elif userinput == 'h':
+    getuserinput(True) 
+  elif userinput == 'q':
+    print('')
+    print('quiting...')
+    exit()
+  else:
+    print('/++++++++++/')
+    print('Invalid request')
+    print('/++++++++++/')
+    getuserinput() 
 
-def creategensisblock():
- genblock = {
-   'previous_hash': '',
-   'index': 0,
-   'transactions': []
- }
- BLOCKCHAIN.append(genblock)
+def create_gensis_block():
 
-def printblockchain():
+  global USERNAME
+
+  transaction = {
+    'sender':'WELCOME_REWARD',
+    'recipient':USERNAME,
+    'amount':1000
+  }
+
+  genblock = {
+    'previous_hash': '',
+    'index': 0,
+    'transactions': [transaction]
+  }
+
+  BLOCKCHAIN.append(genblock)
+
+def print_blockchain():
   print(BLOCKCHAIN)
+  print(PARTICIPANTS)
+  print(TRANSACTION_QUEUE)
 
 def get_block_hash(index):
   """[summary]
@@ -102,25 +127,78 @@ def get_block_hash(index):
   # get previous block
   # hash previous block
 
+def get_user_balance(user):
+  global BLOCKCHAIN
+
+  user_balance = 0
+
+  for index, block in enumerate(BLOCKCHAIN):
+    transactions = block['transactions']
+
+    for transaction in transactions:
+      if user == transaction['recipient']:
+        amount = int(transaction['amount'])
+        user_balance += amount
+
+      if user == transaction['sender']:
+        amount = int(transaction['amount'])
+        user_balance -= amount
+  
+  return user_balance
+
+def print_balance(user):
+  balance = get_user_balance(user)
+  print('Your current balance', balance)
 
 def create_transaction():
- #  create transaction dictionary
- recipient = input("Who are you sending money? ")
- amount = input("How much are you sending? $")
+  #  create transaction dictionary
+  global PARTICIPANTS, USERNAME
+  recipient = input("Who are you sending money? ")
+  PARTICIPANTS.add(recipient)
+  user_balance = get_user_balance(USERNAME)
 
- transaction = {
-   'sender':USERNAME,
-   'recipient':recipient,
-   'amount':amount
- }
+  try:
+    amount = int(input("How much are you sending? $"))
 
- TRANSACTION_QUEUE.append(transaction)
+    if user_balance > amount:
+      add_transaction(amount,recipient,USERNAME,user_balance)
+    else:
+      print('You do not have enough money!')
 
+  except:
+    print("Wrong input, please input a number")
+    create_transaction()
+
+
+def add_transaction(amount,recipient,sender,user_balance):
+  global TRANSACTION_QUEUE
+
+  transaction = {
+    'sender':sender,
+    'recipient':recipient,
+    'amount':amount
+  }
+
+  TRANSACTION_QUEUE.append(transaction)
+
+  print('')
+  print('Initial balance', user_balance)
+  print('Transfer', amount)
+  print('Final balance', user_balance - amount)
+  print('')
+
+def reward_miner(username):
+  reward = {
+   'sender':'MINING',
+   'recipient':username,
+   'amount':200
+  }
+
+  TRANSACTION_QUEUE.append(reward)
 
 def mine():
   # add block to blockchain
-  global BLOCKCHAIN
-  global TRANSACTION_QUEUE
+  global BLOCKCHAIN, TRANSACTION_QUEUE, USERNAME
 
   index = len(BLOCKCHAIN)
 
@@ -137,24 +215,27 @@ def mine():
   BLOCKCHAIN.append(new_block)
 
   # # reward miner
+  reward_miner(USERNAME)
 
 
 def checkblockchainhealth():
   is_healthy = True
 
-  # compare hash with previous block
-  for index, block in enumerate(BLOCKCHAIN):
-    print(block,index)
-    previous_hash_from_actual_block = get_block_hash(index-1)
-    previous_hash_from_current_block = block.previous_block
+  if len(BLOCKCHAIN)>1:
 
-    if(previous_hash_from_actual_block != previous_hash_from_current_block):
-      is_healthy = False
-  
-  if is_healthy:
-    print('The blockchain is fine!')
-  else:
-    print('The blockchain was hacked!')
+    # compare hash with previous block
+    for index, block in enumerate(BLOCKCHAIN):
+      if index > 0:
+        previous_hash_from_actual_block = get_block_hash(index-1)
+        previous_hash_from_current_block = block['previous_hash']
+
+        if(previous_hash_from_actual_block != previous_hash_from_current_block):
+          is_healthy = False
+    
+    if is_healthy:
+      print('The blockchain is fine!')
+    else:
+      print('The blockchain was hacked!')
 
 def manipulateblockchain():
   block_to_change = input('Which block do you want to hack? Type a number from 1 to ' + str(len(BLOCKCHAIN) - 1) + ' -> ')
@@ -167,5 +248,5 @@ def manipulateblockchain():
 
 # Init program
 getusername()
-creategensisblock()
+create_gensis_block()
 getuserinput(True)
