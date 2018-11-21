@@ -1,26 +1,10 @@
-print('Hello!')
-s = input("What's your name? ")
+file = open('blockchain.txt','r+')
 
-count = 0
+print(file.read())
 
-w, h = 3, 3
-transactions = [[0 for x in range(w)] for y in range(h)] 
+file.write('Hello World') 
+file.write('This is our new text file') 
+file.write('and this is another line.') 
+file.write('Why? Because we can.') 
 
-print('')
-
-while count < 3:
- n = str(count + 1)
- print('')
- print('/------Transaction #' + n +'--------/')
- print('')
- transactions[count][0] = input("Who are you sending money? ")
- transactions[count][1] = input("How much are you sending to "+ transactions[count][0] +"? $")
- transactions[count][2] = s
- count += 1
-
-print('')
-print('')
-print('/----Transaction summary-----/')
-print('')
-print(transactions)
-print('')
+file.close()

@@ -14,12 +14,27 @@ logger.setLevel(logging.DEBUG)
 
 # json_dumped = json.dumps(dictionary, sort_keys=True)
 # print(json_dumped)
-
 BLOCKCHAIN = []
-TRANSACTION_QUEUE = []
 TRANSACTION_QUEUE = []
 USERNAME = ""
 PARTICIPANTS = set()
+
+def init():
+  global BLOCKCHAIN, TRANSACTION_QUEUE
+
+  file = open('blockchain.txt','r')
+  try:
+    data_from_file = eval(file.read())
+
+    BLOCKCHAIN = data_from_file['blockchain']
+    TRANSACTION_QUEUE = data_from_file['transactions_queue']
+    # todo: save participants info from file to PARTICIPANTS variable
+  except:
+    BLOCKCHAIN = []
+    TRANSACTION_QUEUE = []
+    USERNAME = ""
+    PARTICIPANTS = set()
+
 
 def getusername():
  global USERNAME, PARTICIPANTS
@@ -143,6 +158,17 @@ def get_user_balance(user):
       if user == transaction['sender']:
         amount = int(transaction['amount'])
         user_balance -= amount
+
+  for index, item in enumerate(TRANSACTION_QUEUE):
+    pending_transaction = item
+
+    if user == pending_transaction['recipient']:
+      amount = int(pending_transaction['amount'])
+      user_balance += amount
+
+    if user == pending_transaction['sender']:
+      amount = int(pending_transaction['amount'])
+      user_balance -= amount
   
   return user_balance
 
@@ -204,11 +230,29 @@ def mine():
 
   previous_hash = get_block_hash(index-1)
 
-  new_block = {
-    'previous_hash':previous_hash,
-    'index':index,
-    'transactions':TRANSACTION_QUEUE
-  }
+
+  need_proof_work = True
+
+  nonce = 0
+  # Proof of work
+
+  while(need_proof_work):
+    nonce += 1
+    new_block = {
+      'previous_hash':previous_hash,
+      'index':index,
+      'transactions':TRANSACTION_QUEUE,
+      'nonce': nonce
+    }
+
+    new_block_dumped = json.dumps(new_block, sort_keys=True)
+    new_block_hash = hl.sha256(new_block_dumped.encode()).hexdigest()
+
+    proof_of_work = new_block_hash[:2]
+
+    if(proof_of_work == 'aa'):
+      need_proof_work = False
+
 
   TRANSACTION_QUEUE = []
 
@@ -216,7 +260,24 @@ def mine():
 
   # # reward miner
   reward_miner(USERNAME)
+  save_blockchain()
 
+
+def save_blockchain():
+  global BLOCKCHAIN, TRANSACTION_QUEUE, PARTICIPANTS
+
+  participants = repr(PARTICIPANTS)
+
+  file_info = {
+    'blockchain': BLOCKCHAIN,
+    'transactions_queue': TRANSACTION_QUEUE,
+    'participants': participants
+  }
+
+  file_info = json.dumps(file_info, sort_keys=True)
+  
+  file = open('blockchain.txt','w')
+  file.write(file_info)
 
 def checkblockchainhealth():
   is_healthy = True
@@ -247,6 +308,7 @@ def manipulateblockchain():
 
 
 # Init program
+init()
 getusername()
 create_gensis_block()
 getuserinput(True)
