@@ -22,18 +22,23 @@ PARTICIPANTS = set()
 def init():
   global BLOCKCHAIN, TRANSACTION_QUEUE
 
+  getusername()
+  
   file = open('blockchain.txt','r')
   try:
     data_from_file = eval(file.read())
 
     BLOCKCHAIN = data_from_file['blockchain']
     TRANSACTION_QUEUE = data_from_file['transactions_queue']
+    PARTICIPANTS = set()
+    PARTICIPANTS.update(data_from_file['participants'])
     # todo: save participants info from file to PARTICIPANTS variable
   except:
     BLOCKCHAIN = []
     TRANSACTION_QUEUE = []
     USERNAME = ""
     PARTICIPANTS = set()
+    create_gensis_block()
 
 
 def getusername():
@@ -121,9 +126,9 @@ def create_gensis_block():
   BLOCKCHAIN.append(genblock)
 
 def print_blockchain():
-  print(BLOCKCHAIN)
-  print(PARTICIPANTS)
-  print(TRANSACTION_QUEUE)
+  print('blockchain',BLOCKCHAIN)
+  print('participants',PARTICIPANTS)
+  print('transaction',TRANSACTION_QUEUE)
 
 def get_block_hash(index):
   """[summary]
@@ -309,6 +314,4 @@ def manipulateblockchain():
 
 # Init program
 init()
-getusername()
-create_gensis_block()
 getuserinput(True)
